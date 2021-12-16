@@ -58,5 +58,5 @@ class Scraper:
         list_elements = self.get_list_elements()
         result_data = []
         for i in list_elements:
-            result_data.append(self.parse_td_elements(i))
+            result_data.append(self._parse_td_elements(i))
         return result_data
