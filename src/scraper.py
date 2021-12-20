@@ -1,4 +1,6 @@
+import pandas as pd
 from bs4 import BeautifulSoup, Tag
+from pandas import DataFrame
 
 from src.dbo import Article
 
@@ -20,18 +22,31 @@ class Scraper:
 
     @staticmethod
     def _get_authors(td: Tag) -> str:
-        data = td.find("i").text
+        try:
+            data = td.find("i").text
+        except AttributeError:
+            data = "Авторы не указаны"
         return data
 
     @staticmethod
     def _get_source(td: Tag) -> str:
-        data = td.find_all("font")[1].find_all("a")[0].text
+        try:
+            data = td.find_all("font")[1].find_all("a")[0].text
+        except IndexError:
+            try:
+                data = td.find_all("font")[1].text
+                data = data.split("\n")[1].replace("\\xa", "")
+            except IndexError:
+                data = td.find_all("font")[0].text
         return data
 
     @staticmethod
     def _get_year(td: Tag) -> str:
-        data = td.find_all("font")[1].text
-        data_split = data.split("\n")[2]
+        try:
+            data = td.find_all("font")[1].text
+            data_split = data.split("\n")[2]
+        except IndexError:
+            data_split = td.find_all("font")[0].text
         return data_split
 
     @staticmethod
@@ -40,8 +55,11 @@ class Scraper:
 
     @staticmethod
     def _get_value(td: Tag) -> str:
-        data = td.find_all("font")[1].text
-        data_split = data.split("\n")[3].replace("\\xa0", "")
+        try:
+            data = td.find_all("font")[1].text
+            data_split = data.split("\n")[3].replace("\\xa0", "")
+        except IndexError:
+            data_split = td.find_all("font")[0].text
         return data_split
 
     def _parse_td_elements(self, tr: Tag):
@@ -54,9 +72,35 @@ class Scraper:
         citations = self._get_citations(get_right_td)
         return Article(title, authors, source, year, value, citations)
 
+    @staticmethod
+    def to_data_frame(list_articles: list[Article]) -> DataFrame:
+        list_title = []
+        list_authors = []
+        list_source = []
+        list_year = []
+        list_value = []
+        list_citations = []
+        for article in list_articles:
+            list_title.append(article.title)
+            list_authors.append(article.author)
+            list_source.append(article.source)
+            list_year.append(article.year)
+            list_value.append(article.value)
+            list_citations.append(article.citations)
+        result_df = pd.DataFrame({
+            "Название": list_title,
+            "Авторы": list_authors,
+            "Журнал": list_source,
+            "Год": list_year,
+            "Том": list_value,
+            "Цитирования": list_citations
+        })
+        return result_df
+
     def start(self):
         list_elements = self.get_list_elements()
         result_data = []
         for i in list_elements:
             result_data.append(self._parse_td_elements(i))
-        return result_data
+        df = self.to_data_frame(result_data)
+        df.to_excel("data/output.xlsx", index=False)
