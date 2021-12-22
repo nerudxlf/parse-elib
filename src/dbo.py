@@ -9,7 +9,7 @@ class Article:
         self.year = year
         self.value = value
         self.citations = citations
-        
+
     def to_json(self):
         return json.dumps({
             "Название": self.title,

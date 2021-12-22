@@ -63,7 +63,8 @@ class Scraper:
         return data_split
 
     def _parse_td_elements(self, tr: Tag):
-        get_center_td, get_right_td, *_ = tr.find_all("td")[1:]
+        get_center_td, *_ = tr.find_all("td")[1:]
+        get_right_td = tr.find("td", "select-tr-right")
         title = self._get_title(get_center_td)
         authors = self._get_authors(get_center_td)
         source = self._get_source(get_center_td)
